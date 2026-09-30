@@ -1,0 +1,5 @@
+[master]
+masternode ansible_ssh_host=10.0.1.245 ansible_ssh_user=ansibleadmin
+
+[slave]
+slavenode1 ansible_ssh_host=10.0.2.127 ansible_ssh_user=ansibleadmin

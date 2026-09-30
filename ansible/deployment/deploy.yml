@@ -1,0 +1,48 @@
+pipeline {
+    agent {label 'Slave1'}
+    
+    environment { JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64'
+    PATH = "${JAVA_HOME}/bin:${env.PATH}" 
+    DOCKER_CREDENTIALS = credentials('dockerlogin')
+    }
+    
+    stages {
+        stage('SCM CheckOut') {
+            steps {
+                git 'https://github.com/sheikh-mufaiz/BankingWebApp.git'
+            }
+        }
+        stage('Application Build') {
+            steps {
+               sh 'mvn clean package'
+            }
+        }
+        stage('Application Image Build') {
+            steps {
+				sh "docker build -t sheikhmufaiz/fundme:${BUILD_NUMBER} ."
+				sh 'docker image list'
+				sh "docker tag sheikhmufaiz/fundme:${BUILD_NUMBER} sheikhmufaiz/fundme:latest"
+            }
+        }
+        stage('Login2DockerHub') {
+			steps {
+				sh 'echo $DOCKER_CREDENTIALS_PSW | docker login -u $DOCKER_CREDENTIALS_USR --password-stdin'
+			}
+		}
+		stage('Publish_to_Docker_Registry') {
+			steps {
+				sh "docker push sheikhmufaiz/fundme:latest"
+			}
+		}	
+		stage('Deploy') {
+            steps {
+                sshagent(['jenkintoansible']) {
+
+                    sh 'scp bankingdeploy.yaml devopsadmin@10.0.1.105:/tmp/bankingdeploy.yaml'
+
+                    sh 'ssh devopsadmin@10.0.1.105 "ansible-playbook -i /home/devopsadmin/ansible/deployment/inventory /home/devopsadmin/ansible/deployment/deploy.yml"'
+                }
+            }
+        }
+    }
+}
