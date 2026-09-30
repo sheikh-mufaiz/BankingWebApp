@@ -1,0 +1,6 @@
+---
+- name: Apply Common Configuration Only
+  hosts: all
+  become: true
+  roles:
+    - common

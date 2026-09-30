@@ -1,0 +1,7 @@
+---
+- name: Test Connectivity to All Nodes
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Ping host
+      ping:

@@ -1,0 +1,157 @@
+---
+# ==========================================
+# Jenkins Slave / Build Server Setup
+# ==========================================
+
+- name: Ensure Ubuntu Universe repository is enabled
+  apt_repository:
+    repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} universe"
+    state: present
+
+# ==========================================
+# Install Java 21 (Agent) & Java 17 (Project Build)
+# ==========================================
+- name: Install OpenJDK 21 (Agent Runtime) and OpenJDK 17 (Build Requirement)
+  apt:
+    name:
+      - "{{ agent_java_package }}"
+      - "{{ build_java_package }}"
+    state: present
+    update_cache: true
+
+- name: Set OpenJDK 21 as default system Java for Jenkins Agent compatibility
+  alternatives:
+    name: java
+    path: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+  ignore_errors: true
+
+- name: Add JAVA_HOME profiles helper for build scripts
+  copy:
+    dest: /etc/profile.d/java_homes.sh
+    content: |
+      # Available JDK installations for builds and agents
+      export JAVA_21_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+      export JAVA_17_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+      export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+    owner: root
+    group: root
+    mode: '0644'
+
+# ==========================================
+# Install Maven & Git
+# ==========================================
+- name: Install Maven and Git
+  apt:
+    name:
+      - maven
+      - git
+    state: present
+
+# ==========================================
+# Install Docker CE
+# ==========================================
+- name: Ensure keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Docker official GPG key
+  get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+
+- name: Add Docker official repository
+  apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    filename: docker
+    state: present
+    update_cache: true
+
+- name: Install Docker Engine and CLI plugins
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+
+- name: Ensure Docker service is enabled and running
+  systemd:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Add user(s) to docker group for non-root execution
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  loop: "{{ docker_users }}"
+
+# ==========================================
+# Install Trivy Security Scanner
+# ==========================================
+- name: Download Trivy official GPG key
+  get_url:
+    url: https://aquasecurity.github.io/trivy-repo/deb/public.key
+    dest: /etc/apt/keyrings/trivy.asc
+    mode: '0644'
+
+- name: Add Trivy repository
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/trivy.asc] https://aquasecurity.github.io/trivy-repo/deb {{ ansible_distribution_release }} main"
+    filename: trivy
+    state: present
+    update_cache: true
+
+- name: Install Trivy
+  apt:
+    name: trivy
+    state: present
+
+# ==========================================
+# Install AWS CLI v2 (Build & Deploy Utility)
+# ==========================================
+- name: Check if AWS CLI is installed
+  command: which aws
+  register: aws_cli_check
+  failed_when: false
+  changed_when: false
+
+- name: Download and install AWS CLI v2
+  when: aws_cli_check.rc != 0
+  block:
+    - name: Download AWS CLI v2 installer
+      get_url:
+        url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+        dest: "/tmp/awscliv2.zip"
+        mode: '0644'
+
+    - name: Unzip AWS CLI v2
+      unarchive:
+        src: "/tmp/awscliv2.zip"
+        dest: "/tmp"
+        remote_src: true
+
+    - name: Run AWS CLI v2 installer
+      command: "/tmp/aws/install"
+
+    - name: Cleanup temporary AWS CLI files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/awscliv2.zip
+        - /tmp/aws
+
+- name: Verify installed build tools
+  debug:
+    msg:
+      - "Jenkins Slave build environment is ready!"
+      - "Java 21: /usr/lib/jvm/java-21-openjdk-amd64 (Agent Prerequisite)"
+      - "Java 17: /usr/lib/jvm/java-17-openjdk-amd64 (Project Build Requirement)"
+      - "Maven, Docker CE, Trivy, and AWS CLI v2 successfully configured."

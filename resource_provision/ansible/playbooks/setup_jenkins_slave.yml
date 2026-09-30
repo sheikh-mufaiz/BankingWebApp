@@ -1,0 +1,6 @@
+---
+- name: Setup Jenkins Slave Node Only
+  hosts: jenkins_slave
+  become: true
+  roles:
+    - jenkins_slave

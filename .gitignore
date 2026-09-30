@@ -31,3 +31,42 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Confidential, SSH Keys, & Infrastructure Provisioning ###
+*.pem
+*.key
+*.pub
+id_rsa*
+*.cer
+*.crt
+*.pfx
+*.p12
+
+# Terraform state & cache
+**/.terraform/*
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+crash.log
+crash.*.log
+*.tfplan
+
+# Terraform variable definition files with secrets/live data
+terraform.tfvars
+terraform.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ansible dynamic inventories with live IPs
+ansible_inventory.ini
+**/inventory.ini
+templates/ansible_inventory.ini
+*.retry
+.vault_pass*
+*.vault_pass

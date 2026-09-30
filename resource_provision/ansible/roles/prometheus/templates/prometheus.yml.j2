@@ -1,0 +1,35 @@
+# Prometheus Global Configuration
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Scrape Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:{{ prometheus_port }}']
+
+  # Scrape Node Exporter across all fleet nodes
+  - job_name: 'node_exporter'
+    static_configs:
+{% for host in groups['all'] %}
+{% if hostvars[host]['ansible_host'] is defined and hostvars[host]['ansible_host'] != '' %}
+      - targets: ['{{ hostvars[host]["ansible_host"] }}:9100']
+        labels:
+          instance: '{{ host }}'
+{% endif %}
+{% endfor %}
+
+  # Scrape Jenkins Master
+{% if groups['jenkins_master'] is defined and groups['jenkins_master'] | length > 0 %}
+  - job_name: 'jenkins'
+    metrics_path: '/prometheus/'
+    static_configs:
+{% for host in groups['jenkins_master'] %}
+{% if hostvars[host]['ansible_host'] is defined and hostvars[host]['ansible_host'] != '' %}
+      - targets: ['{{ hostvars[host]["ansible_host"] }}:8080']
+        labels:
+          instance: '{{ host }}'
+{% endif %}
+{% endfor %}
+{% endif %}

@@ -1,0 +1,59 @@
+---
+# ==========================================
+# Grafana Installation & Datasource Setup
+# ==========================================
+
+- name: Ensure keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Grafana GPG signing key
+  get_url:
+    url: "{{ grafana_repo_key_url }}"
+    dest: /etc/apt/keyrings/grafana.asc
+    mode: '0644'
+
+- name: Add Grafana official APT repository
+  apt_repository:
+    repo: "{{ grafana_repo_url }}"
+    filename: grafana
+    state: present
+    update_cache: true
+
+- name: Install Grafana package
+  apt:
+    name: grafana
+    state: present
+
+- name: Ensure Grafana datasource provisioning directory exists
+  file:
+    path: /etc/grafana/provisioning/datasources
+    state: directory
+    owner: root
+    group: grafana
+    mode: '0755'
+
+- name: Deploy automatic Prometheus datasource configuration
+  template:
+    src: datasources.yml.j2
+    dest: /etc/grafana/provisioning/datasources/prometheus.yaml
+    owner: root
+    group: grafana
+    mode: '0640'
+  notify:
+    - Restart grafana
+
+- name: Start and enable Grafana service
+  systemd:
+    name: grafana-server
+    state: started
+    enabled: true
+
+- name: Wait for Grafana Web UI on port 3000
+  wait_for:
+    port: "{{ grafana_port }}"
+    host: 127.0.0.1
+    delay: 5
+    timeout: 60

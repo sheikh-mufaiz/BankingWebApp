@@ -1,0 +1,97 @@
+---
+# ==========================================
+# Prometheus Installation & Configuration
+# ==========================================
+
+- name: Create prometheus system group
+  group:
+    name: prometheus
+    system: true
+    state: present
+
+- name: Create prometheus system user
+  user:
+    name: prometheus
+    group: prometheus
+    system: true
+    shell: /sbin/nologin
+    create_home: false
+    state: present
+
+- name: Create Prometheus configuration and data directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: '0755'
+  loop:
+    - /etc/prometheus
+    - /etc/prometheus/consoles
+    - /etc/prometheus/console_libraries
+    - /var/lib/prometheus
+
+- name: Download and unpack Prometheus binary archive
+  unarchive:
+    src: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: /tmp
+    remote_src: true
+    creates: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/prometheus"
+
+- name: Copy prometheus and promtool executables to /usr/local/bin
+  copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    remote_src: true
+    owner: prometheus
+    group: prometheus
+    mode: '0755'
+  loop:
+    - prometheus
+    - promtool
+
+- name: Copy default console files
+  copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}/"
+    dest: "/etc/prometheus/{{ item }}/"
+    remote_src: true
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+  loop:
+    - consoles
+    - console_libraries
+
+- name: Deploy Prometheus configuration file
+  template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+  notify:
+    - Restart prometheus
+
+- name: Deploy Prometheus systemd unit service
+  template:
+    src: prometheus.service.j2
+    dest: /etc/systemd/system/prometheus.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart prometheus
+
+- name: Enable and start Prometheus service
+  systemd:
+    name: prometheus
+    state: started
+    enabled: true
+
+- name: Wait for Prometheus Web UI to become available on port 9090
+  wait_for:
+    port: "{{ prometheus_port }}"
+    host: 127.0.0.1
+    delay: 5
+    timeout: 60

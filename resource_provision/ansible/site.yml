@@ -1,0 +1,33 @@
+---
+# ==========================================================
+# Master Playbook: FundMe BankingWebApp Fleet Configuration
+# ==========================================================
+
+# 1. Base configuration across all fleet nodes
+- name: Apply Common Base Configuration (Swap & Node Exporter)
+  hosts: all
+  become: true
+  roles:
+    - common
+
+# 2. Jenkins Master CI/CD Controller
+- name: Provision Jenkins Master (OpenJDK 21 & Jenkins LTS)
+  hosts: jenkins_master
+  become: true
+  roles:
+    - jenkins_master
+
+# 3. Jenkins Slave Build Server
+- name: Provision Jenkins Build Slave (OpenJDK 21, OpenJDK 17, Maven, Docker, Trivy)
+  hosts: jenkins_slave
+  become: true
+  roles:
+    - jenkins_slave
+
+# 4. Dedicated Monitoring Server
+- name: Provision Dedicated Monitoring Server (Prometheus & Grafana)
+  hosts: monitoring
+  become: true
+  roles:
+    - prometheus
+    - grafana

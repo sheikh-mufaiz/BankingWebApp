@@ -1,0 +1,5 @@
+---
+# Variables for Grafana role
+grafana_port: 3000
+grafana_repo_key_url: "https://apt.grafana.com/gpg.key"
+grafana_repo_url: "deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com stable main"

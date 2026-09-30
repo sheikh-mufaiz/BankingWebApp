@@ -1,0 +1,8 @@
+---
+# Variables for Jenkins Slave / Build Server
+agent_java_package: "openjdk-21-jdk"
+build_java_package: "openjdk-17-jdk"
+docker_users:
+  - ubuntu
+  - ansibleadmin
+

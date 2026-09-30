@@ -1,0 +1,4 @@
+---
+# Variables for common role
+node_exporter_version: "1.8.2"
+swap_size_mb: 2048

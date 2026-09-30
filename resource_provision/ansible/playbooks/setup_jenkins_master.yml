@@ -1,0 +1,6 @@
+---
+- name: Setup Jenkins Master Node Only
+  hosts: jenkins_master
+  become: true
+  roles:
+    - jenkins_master

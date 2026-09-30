@@ -1,0 +1,119 @@
+---
+# ==========================================
+# Common Base Configuration for All Nodes
+# ==========================================
+
+- name: Update apt cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install common essential packages
+  apt:
+    name:
+      - curl
+      - wget
+      - git
+      - htop
+      - net-tools
+      - unzip
+      - software-properties-common
+      - ca-certificates
+      - apt-transport-https
+      - gnupg
+      - tar
+    state: present
+
+# ==========================================
+# Configure 2GB Swap Memory (Crucial for t3.micro)
+# ==========================================
+- name: Check if swapfile exists
+  stat:
+    path: /swapfile
+  register: swap_file_stat
+
+- name: Create 2GB swapfile
+  command: fallocate -l 2G /swapfile
+  when: not swap_file_stat.stat.exists
+
+- name: Set secure permissions on swapfile
+  file:
+    path: /swapfile
+    owner: root
+    group: root
+    mode: '0600'
+  when: not swap_file_stat.stat.exists
+
+- name: Format swapfile as swap space
+  command: mkswap /swapfile
+  when: not swap_file_stat.stat.exists
+
+- name: Enable swap space
+  command: swapon /swapfile
+  when: not swap_file_stat.stat.exists
+
+- name: Add swapfile entry to /etc/fstab for boot persistence
+  lineinfile:
+    path: /etc/fstab
+    line: '/swapfile none swap sw 0 0'
+    state: present
+
+- name: Set swappiness to 10 for optimal memory balance
+  lineinfile:
+    path: /etc/sysctl.conf
+    line: 'vm.swappiness=10'
+    regexp: '^vm\.swappiness'
+    state: present
+  notify:
+    - Reload systemd
+
+# ==========================================
+# Install Prometheus Node Exporter (Port 9100)
+# ==========================================
+- name: Create node_exporter system group
+  group:
+    name: node_exporter
+    system: true
+    state: present
+
+- name: Create node_exporter system user
+  user:
+    name: node_exporter
+    group: node_exporter
+    system: true
+    shell: /sbin/nologin
+    create_home: false
+    state: present
+
+- name: Download and unpack Node Exporter binary
+  unarchive:
+    src: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+    dest: /tmp
+    remote_src: true
+    creates: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+
+- name: Copy node_exporter executable to /usr/local/bin
+  copy:
+    src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+    dest: /usr/local/bin/node_exporter
+    remote_src: true
+    owner: node_exporter
+    group: node_exporter
+    mode: '0755'
+
+- name: Deploy node_exporter systemd service unit
+  template:
+    src: node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart node_exporter
+
+- name: Enable and start node_exporter service
+  systemd:
+    name: node_exporter
+    state: started
+    enabled: true

@@ -1,0 +1,21 @@
+# AWS Region & Environment
+aws_region  = "ap-south-1"
+environment = "dev"
+
+# SSH Key Pair Name
+key_name = "banking_web_app_key"
+
+# Instance Sizing (AWS Free Tier: t2.micro or t3.micro)
+ansible_server_instance_type = "t3.micro"
+jenkins_master_instance_type = "t3.micro"
+jenkins_slave_instance_type  = "t3.micro"
+monitoring_instance_type     = "t3.micro"
+
+# Root Volume Sizing in GB (8 GB is Ubuntu AMI minimum)
+ansible_server_volume_size   = 8
+jenkins_master_volume_size   = 8
+jenkins_slave_volume_size    = 8
+monitoring_volume_size       = 8
+
+# Security: Allowed SSH CIDR (replace with your IP/32 for enhanced security)
+allowed_ssh_cidr = "0.0.0.0/0"

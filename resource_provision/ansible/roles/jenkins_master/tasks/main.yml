@@ -1,0 +1,95 @@
+---
+# ==========================================
+# Jenkins Master Setup with OpenJDK 21
+# ==========================================
+
+- name: Ensure Ubuntu Universe repository is enabled
+  apt_repository:
+    repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} universe"
+    state: present
+
+- name: Install OpenJDK 21 JDK (Prerequisite)
+  apt:
+    name: "{{ jenkins_java_package }}"
+    state: present
+    update_cache: true
+
+- name: Ensure Java 21 is set as default alternative
+  alternatives:
+    name: java
+    path: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+  ignore_errors: true
+
+- name: Create keyrings directory
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Jenkins official GPG key
+  get_url:
+    url: "{{ jenkins_repo_key_url }}"
+    dest: /usr/share/keyrings/jenkins-keyring.asc
+    mode: '0644'
+
+- name: Add Jenkins APT repository
+  apt_repository:
+    repo: "{{ jenkins_repo_url }}"
+    filename: jenkins
+    state: present
+    update_cache: true
+
+- name: Install Jenkins LTS
+  apt:
+    name: jenkins
+    state: present
+
+- name: Create Jenkins systemd drop-in directory for JVM memory tuning
+  file:
+    path: /etc/systemd/system/jenkins.service.d
+    state: directory
+    mode: '0755'
+
+- name: Configure JVM memory limit for Jenkins (prevent OOM on t3.micro)
+  copy:
+    dest: /etc/systemd/system/jenkins.service.d/override.conf
+    content: |
+      [Service]
+      Environment="JAVA_OPTS=-Djava.awt.headless=true -Xms256m -Xmx512m"
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Restart jenkins
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: true
+
+- name: Start and enable Jenkins service
+  systemd:
+    name: jenkins
+    state: started
+    enabled: true
+
+- name: Wait for Jenkins Web UI to become responsive on port 8080
+  wait_for:
+    port: "{{ jenkins_port }}"
+    host: 127.0.0.1
+    delay: 15
+    timeout: 180
+
+- name: Read Jenkins Initial Admin Password
+  slurp:
+    src: /var/lib/jenkins/secrets/initialAdminPassword
+  register: jenkins_admin_pwd
+  ignore_errors: true
+
+- name: Display Jenkins Initial Admin Password
+  debug:
+    msg:
+      - "================================================================="
+      - "Jenkins Master is UP and RUNNING on port 8080!"
+      - "Unlock Jenkins at: http://{{ ansible_host }}:8080"
+      - "Initial Admin Password: {{ jenkins_admin_pwd.content | b64decode | trim if jenkins_admin_pwd.content is defined else 'Check /var/lib/jenkins/secrets/initialAdminPassword' }}"
+      - "================================================================="

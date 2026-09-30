@@ -1,0 +1,21 @@
+# Set default behavior to automatically handle line endings
+* text=auto
+
+# Shell scripts must always use LF line endings (prevents /bin/bash^M errors on Linux)
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Terraform & Ansible configuration files
+*.tf text eol=lf
+*.tfvars text eol=lf
+*.tpl text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.cfg text eol=lf
+*.j2 text eol=lf
+
+# PowerShell scripts (Windows)
+*.ps1 text eol=crlf
+
+# Documentation & Markdown
+*.md text

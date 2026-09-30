@@ -1,0 +1,76 @@
+# ==========================================
+# Terraform
+# ==========================================
+# Local .terraform directories containing provider binaries
+**/.terraform/*
+.terraform/
+.terraform.lock.hcl
+
+# Terraform state files (CRITICAL: Contains private keys, resource IDs, IPs)
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Terraform crash logs
+crash.log
+crash.*.log
+
+# Terraform execution plan files
+*.tfplan
+
+# Terraform variable definition files (Keep local, use .example for repo)
+terraform.tfvars
+terraform.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+
+# Terraform override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI configuration files
+.terraformrc
+terraform.rc
+
+# ==========================================
+# Secrets, Private Keys & Certificates (CRITICAL)
+# ==========================================
+*.pem
+*.key
+*.pub
+id_rsa
+id_rsa.pub
+*.cer
+*.crt
+*.pfx
+*.p12
+
+# ==========================================
+# Ansible
+# ==========================================
+# Ansible retry files
+*.retry
+
+# Dynamic inventory files generated with live AWS public IPs
+ansible_inventory.ini
+ansible/inventory.ini
+templates/ansible_inventory.ini
+
+# Ansible vault password files
+.vault_pass*
+*.vault_pass
+
+# ==========================================
+# OS & Editor Artifacts
+# ==========================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

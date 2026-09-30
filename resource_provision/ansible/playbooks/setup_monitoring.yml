@@ -1,0 +1,7 @@
+---
+- name: Setup Monitoring Node Only (Prometheus & Grafana)
+  hosts: monitoring
+  become: true
+  roles:
+    - prometheus
+    - grafana
