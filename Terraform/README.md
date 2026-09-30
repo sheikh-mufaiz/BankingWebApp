@@ -65,7 +65,7 @@ Type `yes` when prompted, or run `terraform apply -auto-approve`.
 
 ## ⚙️ Automated Tool Configuration with Ansible
 
-The [`ansible/`](file:///c:/Users/smufa/Desktop/resource_provision/ansible) directory contains automated, production-grade roles and playbooks to configure all required software across the fleet.
+The [`ansible/`](ansible) directory contains automated, production-grade roles and playbooks to configure all required software across the fleet.
 
 ### Fleet Tool Summary
 

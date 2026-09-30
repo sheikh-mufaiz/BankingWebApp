@@ -70,3 +70,6 @@ templates/ansible_inventory.ini
 *.retry
 .vault_pass*
 *.vault_pass
+
+# Local DevOps runbook
+DEVOPS.md
